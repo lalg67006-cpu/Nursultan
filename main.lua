@@ -738,4 +738,286 @@ local function toggleDropdown(parentRow, badgeLabel, featureName)
     drop.Size = UDim2.new(0, 115, 0, 58)
     drop.Position = UDim2.new(1, -120, 1, 3)
     drop.BackgroundColor3 = Color3.fromRGB(24, 18, 20)
-    drop.ZIndex =
+    drop.ZIndex = 30
+    drop.Parent = parentRow
+
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 6)
+    c.Parent = drop
+
+    local s = Instance.new("UIStroke")
+    s.Color = THEME.Border
+    s.Thickness = 1
+    s.Parent = drop
+
+    local list = Instance.new("UIListLayout")
+    list.Padding = UDim.new(0, 1)
+    list.Parent = drop
+
+    local pad = Instance.new("UIPadding")
+    pad.PaddingTop = UDim.new(0, 3)
+    pad.PaddingBottom = UDim.new(0, 3)
+    pad.PaddingLeft = UDim.new(0, 5)
+    pad.PaddingRight = UDim.new(0, 5)
+    pad.Parent = drop
+
+    local function addOption(name, onClick)
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1, 0, 0, 24)
+        btn.BackgroundTransparency = 1
+        btn.Text = " " .. name
+        btn.Font = Enum.Font.GothamMedium
+        btn.TextSize = 10.5
+        btn.TextColor3 = THEME.TextPrimary
+        btn.TextXAlignment = Enum.TextXAlignment.Left
+        btn.ZIndex = 31
+        btn.Parent = drop
+
+        btn.MouseEnter:Connect(function() btn.TextColor3 = THEME.Accent end)
+        btn.MouseLeave:Connect(function() btn.TextColor3 = THEME.TextPrimary end)
+        btn.MouseButton1Click:Connect(function()
+            drop:Destroy()
+            ActiveDropdown = nil
+            if onClick then onClick() end
+        end)
+    end
+
+    addOption("Bind Key", function()
+        openKeybindModal(badgeLabel, featureName)
+    end)
+    addOption("Reset Value", function()
+        badgeLabel.Text = "-"
+    end)
+
+    ActiveDropdown = drop
+end
+
+local registeredRows = {}
+
+local function addToggle(card, name, description, defaultState, keybindDefault, callback)
+    local row = Instance.new("Frame")
+    row.Name = name
+    row.Size = UDim2.new(1, 0, 0, description and 30 or 21)
+    row.BackgroundTransparency = 1
+    row.Parent = card
+
+    table.insert(registeredRows, {Frame = row, Name = name:lower()})
+
+    local textContainer = Instance.new("Frame")
+    textContainer.Size = UDim2.new(1, -80, 1, 0)
+    textContainer.BackgroundTransparency = 1
+    textContainer.Parent = row
+
+    local rowTitle = Instance.new("TextLabel")
+    rowTitle.Size = UDim2.new(1, 0, 0, 14)
+    rowTitle.BackgroundTransparency = 1
+    rowTitle.Text = name
+    rowTitle.Font = Enum.Font.GothamMedium
+    rowTitle.TextSize = 11
+    rowTitle.TextColor3 = THEME.TextPrimary
+    rowTitle.TextXAlignment = Enum.TextXAlignment.Left
+    rowTitle.Parent = textContainer
+
+    if description then
+        local rowDesc = Instance.new("TextLabel")
+        rowDesc.Size = UDim2.new(1, 0, 0, 12)
+        rowDesc.Position = UDim2.new(0, 0, 0, 14)
+        rowDesc.BackgroundTransparency = 1
+        rowDesc.Text = description
+        rowDesc.Font = Enum.Font.Gotham
+        rowDesc.TextSize = 9
+        rowDesc.TextColor3 = THEME.TextMuted
+        rowDesc.TextXAlignment = Enum.TextXAlignment.Left
+        rowDesc.Parent = textContainer
+    end
+
+    local badge = Instance.new("TextLabel")
+    badge.Size = UDim2.new(0, 18, 0, 14)
+    badge.Position = UDim2.new(1, -76, 0.5, -7)
+    badge.BackgroundColor3 = THEME.BadgeBg
+    badge.Text = keybindDefault or ""
+    badge.Visible = (keybindDefault ~= nil)
+    badge.Font = Enum.Font.GothamBold
+    badge.TextSize = 8.5
+    badge.TextColor3 = THEME.TextMuted
+    badge.Parent = row
+
+    local bc = Instance.new("UICorner")
+    bc.CornerRadius = UDim.new(0, 3)
+    bc.Parent = badge
+
+    local bs = Instance.new("UIStroke")
+    bs.Color = THEME.Border
+    bs.Thickness = 0.8
+    bs.Parent = badge
+
+    local optBtn = Instance.new("ImageButton")
+    optBtn.Size = UDim2.new(0, 13, 0, 13)
+    optBtn.Position = UDim2.new(1, -52, 0.5, -6.5)
+    optBtn.BackgroundTransparency = 1
+    optBtn.Image = ICONS.More
+    optBtn.ImageColor3 = THEME.TextDim
+    optBtn.Parent = row
+
+    optBtn.MouseEnter:Connect(function()
+        TweenService:Create(optBtn, TWEEN_FAST, {ImageColor3 = THEME.TextPrimary}):Play()
+    end)
+    optBtn.MouseLeave:Connect(function()
+        TweenService:Create(optBtn, TWEEN_FAST, {ImageColor3 = THEME.TextDim}):Play()
+    end)
+    optBtn.MouseButton1Click:Connect(function()
+        badge.Visible = true
+        toggleDropdown(row, badge, name)
+    end)
+
+    local switch = Instance.new("TextButton")
+    switch.Size = UDim2.new(0, 32, 0, 16)
+    switch.Position = UDim2.new(1, -32, 0.5, -8)
+    switch.BackgroundColor3 = defaultState and THEME.Accent or THEME.ToggleOff
+    switch.Text = ""
+    switch.AutoButtonColor = false
+    switch.Parent = row
+
+    local sCorner = Instance.new("UICorner")
+    sCorner.CornerRadius = UDim.new(1, 0)
+    sCorner.Parent = switch
+
+    local knob = Instance.new("Frame")
+    knob.Size = UDim2.new(0, 12, 0, 12)
+    knob.Position = defaultState and UDim2.new(1, -14, 0.5, -6) or UDim2.new(0, 2, 0.5, -6)
+    knob.BackgroundColor3 = defaultState and THEME.KnobOn or THEME.KnobOff
+    knob.BorderSizePixel = 0
+    knob.Parent = switch
+
+    local kCorner = Instance.new("UICorner")
+    kCorner.CornerRadius = UDim.new(1, 0)
+    kCorner.Parent = knob
+
+    local isToggled = defaultState
+    switch.MouseButton1Click:Connect(function()
+        isToggled = not isToggled
+        local targetColor = isToggled and THEME.Accent or THEME.ToggleOff
+        local targetKnobColor = isToggled and THEME.KnobOn or THEME.KnobOff
+        local targetPos = isToggled and UDim2.new(1, -14, 0.5, -6) or UDim2.new(0, 2, 0.5, -6)
+
+        TweenService:Create(switch, TWEEN_FAST, {BackgroundColor3 = targetColor}):Play()
+        TweenService:Create(knob, TWEEN_FAST, {BackgroundColor3 = targetKnobColor, Position = targetPos}):Play()
+
+        if callback then
+            callback(isToggled)
+        end
+    end)
+end
+
+SearchInput:GetPropertyChangedSignal("Text"):Connect(function()
+    local query = SearchInput.Text:lower()
+    for _, item in ipairs(registeredRows) do
+        if query == "" or string.find(item.Name, query, 1, true) then
+            item.Frame.Visible = true
+        else
+            item.Frame.Visible = false
+        end
+    end
+end)
+
+-- =============================================================================
+-- СОЗДАНИЕ КОНТЕНТА ВО ВКЛАДКАХ
+-- =============================================================================
+
+-- COMBAT
+local combatCol1, combatCol2 = createTabColumns("Combat")
+
+local cardFighting = createCard(combatCol1, "Fighting", 1)
+addToggle(cardFighting, "Attack Aura", nil, false, nil)
+addToggle(cardFighting, "No Velocity", nil, false, nil)
+addToggle(cardFighting, "Trigger Bot", nil, false, nil)
+addToggle(cardFighting, "Aim Assist", nil, false, "F1")
+addToggle(cardFighting, "Auto Explosion", nil, false, nil)
+
+local cardBase = createCard(combatCol1, "Base", 2)
+addToggle(cardBase, "Auto Swap", nil, true, nil)
+addToggle(cardBase, "Item Release", nil, false, nil)
+
+local cardTools = createCard(combatCol2, "Tools", 1)
+addToggle(cardTools, "Sprint Reset", nil, false, nil)
+addToggle(cardTools, "Tape Mouse", nil, false, nil)
+addToggle(cardTools, "Aim Assist", "Helps to Focus on Entities", false, nil)
+addToggle(cardTools, "Web Trap", nil, false, nil)
+
+local cardOther = createCard(combatCol2, "Other", 2)
+addToggle(cardOther, "No Slot Change", nil, false, nil)
+addToggle(cardOther, "Anti Bot", nil, false, nil)
+addToggle(cardOther, "No Friend Damage", nil, true, nil)
+
+-- MOVEMENT
+local moveCol1, moveCol2 = createTabColumns("Movement")
+local cardMoveMain = createCard(moveCol1, "Movement", 1)
+addToggle(cardMoveMain, "Sprint", nil, false, nil)
+addToggle(cardMoveMain, "Infinite Jump", nil, false, nil)
+addToggle(cardMoveMain, "Fly", nil, false, nil)
+addToggle(cardMoveMain, "Noclip", nil, false, nil)
+
+local cardMoveExtra = createCard(moveCol2, "Extra", 1)
+addToggle(cardMoveExtra, "Speed Boost", nil, false, nil)
+addToggle(cardMoveExtra, "High Jump", nil, false, nil)
+addToggle(cardMoveExtra, "Wall Climb", nil, false, nil)
+
+-- VISUALS
+local visCol1, visCol2 = createTabColumns("Visuals")
+local cardEsp = createCard(visCol1, "ESP", 1)
+addToggle(cardEsp, "Player ESP", nil, false, nil)
+addToggle(cardEsp, "Box ESP", nil, false, nil)
+addToggle(cardEsp, "Name ESP", nil, false, nil)
+addToggle(cardEsp, "Health ESP", nil, false, nil)
+
+local cardVisuals = createCard(visCol2, "Visuals", 1)
+addToggle(cardVisuals, "Fullbright", nil, false, nil)
+addToggle(cardVisuals, "No Fog", nil, false, nil)
+addToggle(cardVisuals, "Crosshair", nil, false, nil)
+
+-- PLAYER
+local plrCol1, _ = createTabColumns("Player")
+local cardPlayer = createCard(plrCol1, "Player", 1)
+addToggle(cardPlayer, "Auto Heal", nil, false, nil)
+addToggle(cardPlayer, "God Mode", nil, false, nil)
+addToggle(cardPlayer, "Anti AFK", nil, false, nil)
+
+-- MISC
+local miscCol1, _ = createTabColumns("Misc")
+local cardMisc = createCard(miscCol1, "Misc", 1)
+addToggle(cardMisc, "Auto Rejoin", nil, false, nil)
+addToggle(cardMisc, "Server Hop", nil, false, nil)
+addToggle(cardMisc, "Copy Job ID", nil, false, nil)
+
+-- Стартовая вкладка
+TabContents["Combat"].Visible = true
+
+-- =============================================================================
+-- TOGGLE UI (RightShift)
+-- =============================================================================
+local isUIVisible = true
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed and input.KeyCode == Enum.KeyCode.RightShift then
+        isUIVisible = not isUIVisible
+        if isUIVisible then
+            Main.Visible = true
+            TweenService:Create(Main, TWEEN_SLOW, {
+                Position = UDim2.new(0.5, -395, 0.5, -245),
+                BackgroundTransparency = 0
+            }):Play()
+            TweenService:Create(GlowBackdrop, TWEEN_SLOW, {ImageTransparency = 0.83}):Play()
+        else
+            local hideTween = TweenService:Create(Main, TWEEN_SLOW, {
+                Position = UDim2.new(0.5, -395, 0.5, -215),
+                BackgroundTransparency = 1
+            })
+            TweenService:Create(GlowBackdrop, TWEEN_SLOW, {ImageTransparency = 1}):Play()
+            hideTween:Play()
+            hideTween.Completed:Connect(function()
+                if not isUIVisible then
+                    Main.Visible = false
+                end
+            end)
+        end
+    end
+end)
